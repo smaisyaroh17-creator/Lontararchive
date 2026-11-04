@@ -23,7 +23,7 @@ const projects: Project[] = [
     technologies: ["Next.js", "TypeScript", "PostgreSQL"],
     category: "Website",
     year: "2026",
-    author: "Contoh Peserta KP",
+    author: "Siti Maisyaroh",
     images: ["01", "02", "03"],
   },
   {

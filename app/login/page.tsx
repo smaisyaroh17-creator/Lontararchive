@@ -2,32 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-const dummyAccounts = [
-  {
-    email: "mahasiswa@lontar.test",
-    password: "123456",
-    name: "Andi Pratama",
-    role: "mahasiswa",
-  },
-  {
-    email: "staf@lontar.test",
-    password: "123456",
-    name: "Siti Rahma",
-    role: "staf",
-  },
-  {
-    email: "admin@lontar.test",
-    password: "123456",
-    name: "Administrator",
-    role: "admin",
-  },
-];
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -35,29 +11,16 @@ export default function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const account = dummyAccounts.find(
-      (item) =>
-        item.email === email &&
-        item.password === password
-    );
+    // Data login dummy sementara
+    const dummyEmail = "smaisyaroh17@gmail.com";
+    const dummyPassword = "sitimaisyaroh17";
 
-    if (!account) {
-      setMessage("Email atau kata sandi tidak sesuai.");
-      return;
-    }
+    if (email === dummyEmail && password === dummyPassword) {
+      setMessage("Login berhasil. Mengalihkan halaman...");
 
-    const session = {
-      name: account.name,
-      email: account.email,
-      role: account.role,
-    };
-
-    localStorage.setItem("lontar-user", JSON.stringify(session));
-
-    if (account.role === "admin") {
-      router.push("/admin");
+      window.location.href = "/dashboard";
     } else {
-      router.push("/dashboard");
+      setMessage("Email atau kata sandi salah. Silakan coba lagi.");
     }
   }
 
@@ -89,6 +52,7 @@ export default function LoginPage() {
             placeholder="Masukkan alamat email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
             required
           />
 
@@ -100,32 +64,24 @@ export default function LoginPage() {
             placeholder="Masukkan kata sandi"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
             required
           />
 
-          <button className="button auth-submit" type="submit">
+          <button
+            className="button auth-submit login-button"
+            type="submit"
+          >
             Masuk
           </button>
 
           {message && (
-            <p className="auth-message" role="alert">
+            <p className="auth-message" role="status">
               {message}
             </p>
           )}
         </form>
 
-        <div className="dummy-account-info">
-          <strong>Akun untuk pengujian</strong>
-          <p>Mahasiswa: mahasiswa@lontar.test</p>
-          <p>Staf: staf@lontar.test</p>
-          <p>Admin: admin@lontar.test</p>
-          <p>Password semua akun: 123456</p>
-        </div>
-
-        <p className="auth-note">
-          Gunakan akun yang tersedia untuk simulasi pengembangan
-          LontarArchive.
-        </p>
       </section>
 
       <p className="auth-footer">

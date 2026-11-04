@@ -368,10 +368,39 @@ export default function Home() {
           </p>
         </div>
 
-        <a className="button" href="/login">
+        <a className="button" href="/ajukan-project">
           Ajukan Proyek <span>→</span>
         </a>
       </section>
+
+      <section className="persuasive-section">
+        <div className="persuasive-content">
+          <p className="eyebrow">BERBAGI INSPIRASI</p>
+          
+          <h2>
+            Jadikan Proyekmu Inspirasi bagi Generasi Berikutnya!
+          </h2>
+            
+          <p>
+            Setiap proyek memiliki proses, pengalaman, dan pembelajaran
+            yang berharga. Bagikan hasil proyek KP atau PKL-mu melalui
+            LontarArchive agar dapat menjadi referensi dan inspirasi
+            bagi peserta berikutnya.
+          </p>
+        </div>
+              
+        <div className="persuasive-visual">
+          <div className="persuasive-icon">
+            <span>✦</span>
+            <span>▤</span>
+            <span>✧</span>
+          </div>
+          <strong>Berbagi Karya,</strong>
+          <strong className="brand-accent">Menginspirasi Sesama.</strong>
+          <p>LontarArchive</p>
+        </div>
+      </section>
+
 
       <footer className="footer">
         <a className="brand footer-brand" href="#">

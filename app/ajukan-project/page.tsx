@@ -129,20 +129,6 @@ export default function AjukanProyek() {
           </div>
 
           <div className="submission-field">
-            <label htmlFor="project-url">URL Proyek</label>
-            <input
-              id="project-url"
-              type="url"
-              placeholder="https://contoh-proyek.com"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-            />
-            <span className="field-hint">
-              Isi jika proyek memiliki tautan demo atau repository.
-            </span>
-          </div>
-
-          <div className="submission-field">
             <label htmlFor="project-images">
               Dokumentasi Proyek
             </label>
