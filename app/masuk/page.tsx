@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { loginDummy } from "@/lib/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,14 +12,12 @@ export default function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Data login dummy sementara
-    const dummyEmail = "smaisyaroh17@gmail.com";
-    const dummyPassword = "sitimaisyaroh17";
+    const success = loginDummy(email, password);
 
-    if (email === dummyEmail && password === dummyPassword) {
+    if (success) {
       setMessage("Login berhasil. Mengalihkan halaman...");
 
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } else {
       setMessage("Email atau kata sandi salah. Silakan coba lagi.");
     }
@@ -81,7 +80,6 @@ export default function LoginPage() {
             </p>
           )}
         </form>
-
       </section>
 
       <p className="auth-footer">

@@ -1,109 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import { useAuth } from "@/components/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
+import type { Project } from "@/types/landingpage";
 
-type Project = {
-  id: number;
-  title: string;
-  description: string;
-  technologies: string[];
-  category: string;
-};
+function getTechnologies(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is string => typeof item === "string"
+    );
+  }
 
-const projects: Project[] = [
-  {
-    id: 1,
-    title: "LontarArchive",
-    description:
-      "Website arsip proyek KP dan PKL untuk menyimpan dokumentasi serta menjadi referensi bagi peserta berikutnya.",
-    technologies: ["Next.js", "TypeScript", "PostgreSQL"],
-    category: "Website",
-  },
-  {
-    id: 2,
-    title: "Sistem Informasi Manajemen",
-    description:
-      "Contoh proyek sistem informasi untuk membantu pengelolaan data secara terstruktur.",
-    technologies: ["React", "PostgreSQL", "Tailwind CSS"],
-    category: "Sistem Informasi",
-  },
-  {
-    id: 3,
-    title: "Aplikasi Pengolahan Data",
-    description:
-      "Contoh proyek pengolahan data untuk mendukung kebutuhan informasi dan pelaporan.",
-    technologies: ["Python", "PostgreSQL"],
-    category: "Data",
-  },
-  {
-    id: 4,
-    title: "Website Layanan Digital",
-    description:
-      "Contoh website layanan digital dengan antarmuka yang sederhana dan mudah digunakan.",
-    technologies: ["Next.js", "Tailwind CSS"],
-    category: "Website",
-  },
-  {
-    id: 5,
-    title: "Aplikasi Mobile",
-    description:
-      "Contoh pengembangan aplikasi mobile untuk mendukung aktivitas pengguna.",
-    technologies: ["Flutter"],
-    category: "Mobile",
-  },
-  {
-    id: 6,
-    title: "Sistem Pengelolaan Data",
-    description:
-      "Contoh sistem untuk membantu penyimpanan dan pengelolaan data.",
-    technologies: ["Laravel", "PostgreSQL"],
-    category: "Sistem Informasi",
-  },
-];
+  return [];
+}
 
 const technologies = [
   "Semua",
   "Next.js",
   "React",
-  "Laravel",
-  "Python",
   "PostgreSQL",
   "Tailwind CSS",
-  "Flutter",
 ];
 
 export default function Home() {
+  const { isLoggedIn } = useAuth();
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [search, setSearch] = useState("");
   const [technology, setTechnology] = useState("Semua");
-  const [category, setCategory] = useState("Semua Bidang");
   const [sort, setSort] = useState("Terbaru");
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    async function fetchProjects() {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("detailproyek")
+        .select(
+          "id, created_at, name, teknologi, deskripsi, url, komentar"
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Gagal mengambil data proyek:", error);
+        setError("Gagal mengambil data proyek dari database.");
+        setLoading(false);
+        return;
+      }
+
+      setProjects((data ?? []) as Project[]);
+      setLoading(false);
+    }
+
+    fetchProjects();
+  }, []);
+
   const filteredProjects = projects
     .filter((project) => {
+      const projectTechnologies = getTechnologies(project.teknologi);
       const keyword = search.toLowerCase();
 
       const matchesSearch =
-        project.title.toLowerCase().includes(keyword) ||
-        project.description.toLowerCase().includes(keyword) ||
-        project.technologies.some((item) =>
+        project.name.toLowerCase().includes(keyword) ||
+        project.deskripsi.toLowerCase().includes(keyword) ||
+        projectTechnologies.some((item) =>
           item.toLowerCase().includes(keyword)
         );
 
       const matchesTechnology =
         technology === "Semua" ||
-        project.technologies.includes(technology);
+        projectTechnologies.includes(technology);
 
-      const matchesCategory =
-        category === "Semua Bidang" || project.category === category;
-
-      return matchesSearch && matchesTechnology && matchesCategory;
+      return matchesSearch && matchesTechnology;
     })
-    .sort((a, b) =>
-      sort === "Nama A-Z" ? a.title.localeCompare(b.title) : b.id - a.id
-    );
+    .sort((a, b) => {
+      if (sort === "Nama A-Z") {
+        return a.name.localeCompare(b.name);
+      }
+
+      return (
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+      );
+    });
 
   const projectsPerPage = 6;
+
   const totalPages = Math.max(
     1,
     Math.ceil(filteredProjects.length / projectsPerPage)
@@ -119,11 +108,6 @@ export default function Home() {
     setPage(1);
   }
 
-  function changeCategory(value: string) {
-    setCategory(value);
-    setPage(1);
-  }
-
   function changeSearch(value: string) {
     setSearch(value);
     setPage(1);
@@ -131,24 +115,7 @@ export default function Home() {
 
   return (
     <main>
-      <header className="navbar">
-        <a className="brand" href="#" aria-label="LontarArchive Beranda">
-          <span className="brand-mark">L</span>
-          <span>
-            Lontar<span className="brand-accent">Archive</span>
-          </span>
-        </a>
-
-        <nav className="nav-links">
-          <a className="nav-active" href="#">Beranda</a>
-          <a href="#katalog">Jelajahi Proyek</a>
-          <a href="#ajukan">Ajukan Proyek</a>
-        </nav>
-
-        <div className="nav-actions">
-          <a className="login-link" href="/login">Masuk</a>
-        </div>
-      </header>
+      <Navbar />
 
       <section className="hero">
         <div className="hero-label">
@@ -180,13 +147,17 @@ export default function Home() {
             });
           }}
         >
-          <span className="search-icon" aria-hidden="true">⌕</span>
+          <span className="search-icon" aria-hidden="true">
+            ⌕
+          </span>
+
           <input
             aria-label="Cari proyek"
             value={search}
             onChange={(event) => changeSearch(event.target.value)}
-            placeholder="Cari nama proyek, arsitektur, atau teknologi..."
+            placeholder="Cari nama proyek atau teknologi..."
           />
+
           <button className="button search-button" type="submit">
             Cari Proyek
           </button>
@@ -203,12 +174,12 @@ export default function Home() {
             <p className="eyebrow">JELAJAHI ARSIP</p>
             <h2>Katalog Proyek</h2>
             <p className="section-description">
-              Temukan proyek berdasarkan teknologi dan bidang pengembangannya.
+              Temukan proyek berdasarkan teknologi yang digunakan.
             </p>
           </div>
 
           <span className="project-count">
-            {filteredProjects.length} proyek
+            {loading ? "Memuat..." : `${filteredProjects.length} proyek`}
           </span>
         </div>
 
@@ -229,24 +200,13 @@ export default function Home() {
 
         <div className="catalog-toolbar">
           <label>
-            <span>Bidang</span>
-            <select
-              value={category}
-              onChange={(event) => changeCategory(event.target.value)}
-            >
-              <option>Semua Bidang</option>
-              <option>Website</option>
-              <option>Sistem Informasi</option>
-              <option>Data</option>
-              <option>Mobile</option>
-            </select>
-          </label>
-
-          <label>
             <span>Urutkan</span>
             <select
               value={sort}
-              onChange={(event) => setSort(event.target.value)}
+              onChange={(event) => {
+                setSort(event.target.value);
+                setPage(1);
+              }}
             >
               <option>Terbaru</option>
               <option>Nama A-Z</option>
@@ -254,69 +214,121 @@ export default function Home() {
           </label>
         </div>
 
-        {currentProjects.length > 0 ? (
+        {loading ? (
+          <div className="empty-state">
+            <h3>Memuat katalog proyek...</h3>
+            <p>Sedang mengambil data dari Supabase.</p>
+          </div>
+        ) : error ? (
+          <div className="empty-state">
+            <h3>Gagal Memuat Proyek</h3>
+            <p>{error}</p>
+            <button
+              className="button"
+              type="button"
+              onClick={() => window.location.reload()}
+            >
+              Coba Lagi
+            </button>
+          </div>
+        ) : currentProjects.length > 0 ? (
           <div className="project-grid">
-            {currentProjects.map((project) => (
-              <article className="project-card" key={project.id}>
-                <div className="project-preview">
-                  <div className="preview-window">
-                    <div className="preview-topbar">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
+            {currentProjects.map((project) => {
+              const projectTechnologies = getTechnologies(
+                project.teknologi
+              );
 
-                    <div className="preview-content">
-                      <div className="preview-symbol">
-                        {project.title.charAt(0)}
+              return (
+                <article className="project-card" key={project.id}>
+                  <div className="project-preview">
+                    {project.url ? (
+                      <img
+                        src={project.url}
+                        alt={`Gambar ${project.name}`}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <div className="preview-window">
+                        <div className="preview-topbar">
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+
+                        <div className="preview-content">
+                          <div className="preview-symbol">
+                            {project.name.charAt(0)}
+                          </div>
+
+                          <div className="preview-line preview-line-long" />
+                          <div className="preview-line preview-line-short" />
+
+                          <div className="preview-blocks">
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                        </div>
                       </div>
-                      <div className="preview-line preview-line-long" />
-                      <div className="preview-line preview-line-short" />
-                      <div className="preview-blocks">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    </div>
+                    )}
+
+                    <span className="category-label">
+                      Arsip Proyek
+                    </span>
                   </div>
 
-                  <span className="category-label">{project.category}</span>
-                </div>
-
-                <div className="project-card-body">
-                  <div className="project-meta">
-                    <span>ARSIP PROYEK</span>
-                    <span>#{String(project.id).padStart(3, "0")}</span>
-                  </div>
-
-                  <h3>{project.title}</h3>
-                  <p className="project-description">
-                    {project.description}
-                  </p>
-
-                  <div className="technology-tags">
-                    {project.technologies.map((item) => (
-                      <span className="technology-tag" key={item}>
-                        {item}
+                  <div className="project-card-body">
+                    <div className="project-meta">
+                      <span>ARSIP PROYEK</span>
+                      <span>
+                        #{String(project.id).padStart(3, "0")}
                       </span>
-                    ))}
-                  </div>
+                    </div>
 
-                  <a
-                    className="project-link"
-                    href={`/projects/${project.id}`}
-                  >
-                    Lihat detail proyek <span>→</span>
-                  </a>
-                </div>
-              </article>
-            ))}
+                    <h3>{project.name}</h3>
+
+                    <p className="project-description">
+                      {project.deskripsi}
+                    </p>
+
+                    <div className="technology-tags">
+                      {projectTechnologies.map((item) => (
+                        <span className="technology-tag" key={item}>
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+
+                    <Link
+                      className="project-link"
+                      href={`/proyek/${project.id}`}
+                    >
+                      Lihat detail proyek <span>→</span>
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">
             <div className="empty-icon">⌕</div>
-            <h3>Proyek tidak ditemukan</h3>
-            <p>Coba gunakan kata kunci atau filter yang berbeda.</p>
+            <h3>
+              {projects.length === 0
+                ? "Belum Ada Proyek"
+                : "Proyek tidak ditemukan"}
+            </h3>
+            <p>
+              {projects.length === 0
+                ? "Belum ada data proyek yang tersedia di katalog."
+                : "Coba gunakan kata kunci atau filter teknologi yang berbeda."}
+            </p>
 
             <button
               className="button"
@@ -324,7 +336,6 @@ export default function Home() {
               onClick={() => {
                 setSearch("");
                 setTechnology("Semua");
-                setCategory("Semua Bidang");
                 setPage(1);
               }}
             >
@@ -333,54 +344,58 @@ export default function Home() {
           </div>
         )}
 
-        {filteredProjects.length > 0 && (
-          <div className="pagination">
-            <button
-              type="button"
-              disabled={page === 1}
-              onClick={() => setPage((current) => current - 1)}
-            >
-              ← Sebelumnya
-            </button>
+        {!loading &&
+          !error &&
+          filteredProjects.length > 0 && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={page === 1}
+                onClick={() => setPage((current) => current - 1)}
+              >
+                ← Sebelumnya
+              </button>
 
-            <span>
-              Halaman {page} dari {totalPages}
-            </span>
+              <span>
+                Halaman {page} dari {totalPages}
+              </span>
 
-            <button
-              type="button"
-              disabled={page === totalPages}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Selanjutnya →
-            </button>
+              <button
+                type="button"
+                disabled={page === totalPages}
+                onClick={() => setPage((current) => current + 1)}
+              >
+                Selanjutnya →
+              </button>
+            </div>
+          )}
+      </section>
+
+      {!isLoggedIn && (
+        <section className="submit-banner" id="ajukan">
+          <div>
+            <p className="eyebrow">BERKONTRIBUSI</p>
+            <h2>Punya proyek yang bisa jadi referensi?</h2>
+            <p>
+              Dokumentasikan proyek KP atau PKL-mu agar dapat menjadi
+              referensi bagi peserta berikutnya.
+            </p>
           </div>
-        )}
-      </section>
 
-      <section className="submit-banner" id="ajukan">
-        <div>
-          <p className="eyebrow">BERKONTRIBUSI</p>
-          <h2>Punya proyek yang bisa jadi referensi?</h2>
-          <p>
-            Dokumentasikan proyek KP atau PKL-mu agar dapat menjadi
-            referensi bagi peserta berikutnya.
-          </p>
-        </div>
-
-        <a className="button" href="/ajukan-project">
-          Ajukan Proyek <span>→</span>
-        </a>
-      </section>
+          <Link className="button" href="/masuk">
+            Ajukan Proyek <span>→</span>
+          </Link>
+        </section>
+      )}
 
       <section className="persuasive-section">
         <div className="persuasive-content">
           <p className="eyebrow">BERBAGI INSPIRASI</p>
-          
+
           <h2>
             Jadikan Proyekmu Inspirasi bagi Generasi Berikutnya!
           </h2>
-            
+
           <p>
             Setiap proyek memiliki proses, pengalaman, dan pembelajaran
             yang berharga. Bagikan hasil proyek KP atau PKL-mu melalui
@@ -388,27 +403,29 @@ export default function Home() {
             bagi peserta berikutnya.
           </p>
         </div>
-              
+
         <div className="persuasive-visual">
           <div className="persuasive-icon">
             <span>✦</span>
             <span>▤</span>
             <span>✧</span>
           </div>
+
           <strong>Berbagi Karya,</strong>
-          <strong className="brand-accent">Menginspirasi Sesama.</strong>
+          <strong className="brand-accent">
+            Menginspirasi Sesama.
+          </strong>
           <p>LontarArchive</p>
         </div>
       </section>
 
-
       <footer className="footer">
-        <a className="brand footer-brand" href="#">
+        <Link className="brand footer-brand" href="/">
           <span className="brand-mark">L</span>
           <span>
             Lontar<span className="brand-accent">Archive</span>
           </span>
-        </a>
+        </Link>
 
         <p>Arsip proyek KP & PKL di Lontarlab.</p>
         <span>© 2026 LontarArchive</span>
